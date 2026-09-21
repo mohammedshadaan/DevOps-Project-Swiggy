@@ -18,23 +18,20 @@ const MIME_TYPES = {
 };
 
 export const handler = async (event) => {
-  // Extract path from the API Gateway or Function URL event
   let path = event.rawPath || event.path || '/index.html';
   
-  if (path === '/') {
-    path = '/index.html';
+  if (path === '/' || path === '/index.html') {
+    path = existsSync(join(__dirname, 'public', 'index.html')) ? '/public/index.html' : '/index.html';
   }
 
-  // Remove leading slash for local file path resolution
   const relativePath = path.startsWith('/') ? path.substring(1) : path;
   const filePath = join(__dirname, relativePath);
 
-  // Check if file exists and is not a directory
   if (!existsSync(filePath)) {
     return {
       statusCode: 404,
       headers: { 'Content-Type': 'text/plain' },
-      body: '404 Not Found'
+      body: `404 Not Found: ${path}`
     };
   }
 
@@ -43,7 +40,6 @@ export const handler = async (event) => {
     const fileExtension = dotIndex !== -1 ? path.substring(dotIndex).toLowerCase() : '';
     const contentType = MIME_TYPES[fileExtension] || 'application/octet-stream';
     
-    // Determine if the file format is binary (e.g. images, fonts)
     const isBinary = !['.html', '.css', '.js', '.json', '.svg'].includes(fileExtension);
     
     const fileBuffer = readFileSync(filePath);
